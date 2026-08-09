@@ -71,3 +71,35 @@ jobs:
             ghcr.io/${{ env.IMAGE_NAME }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # Without this, every scanner release needs a hand-written PR against the
+  # deployment repo — which is exactly the step that gets forgotten while prod
+  # quietly keeps running an old image. Backend and frontend have had this from
+  # the start; the watchtower repo did not.
+  update-prod:
+    needs: build-prod
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up kustomize
+        uses: imranismail/setup-kustomize@v2
+
+      - name: Clone deployment repo
+        run: |
+          git clone https://x-access-token:${{ secrets.DEPLOY_REPO_TOKEN }}@github.com/magenta-mause/cosy-domain-provider-deployment.git deploy-repo
+
+      - name: Update watchtower image tag
+        run: |
+          # Unlike backend and frontend, the `v` is kept: the images published
+          # above are tagged with the git ref verbatim, so stripping it here
+          # would point the overlay at a tag that does not exist.
+          cd deploy-repo/overlays/prod
+          kustomize edit set image ghcr.io/${{ env.IMAGE_NAME }}:${GITHUB_REF_NAME}
+
+      - name: Commit and push
+        run: |
+          cd deploy-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git diff --quiet && git diff --staged --quiet || git commit -am "ci: update watchtower image to ${GITHUB_REF_NAME}"
+          git push
