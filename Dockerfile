@@ -1,6 +1,11 @@
 # The Playwright image already carries Chromium plus every system library it needs;
 # installing browsers into a plain node image needs the same ~700MB anyway.
-FROM mcr.microsoft.com/playwright:v1.50.0-noble AS build
+#
+# This tag MUST match the `playwright` version in package.json exactly, which is why
+# that dependency is pinned rather than a caret range: the image ships the browser
+# binaries for its own version, and a library that resolved even one minor ahead
+# looks for a build directory that does not exist. Bump both together.
+FROM mcr.microsoft.com/playwright:v1.62.1-noble AS build
 
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -9,7 +14,7 @@ COPY tsconfig.json ./
 COPY src ./src
 RUN npm run build
 
-FROM mcr.microsoft.com/playwright:v1.50.0-noble AS runtime
+FROM mcr.microsoft.com/playwright:v1.62.1-noble AS runtime
 
 WORKDIR /app
 ENV NODE_ENV=production
