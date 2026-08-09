@@ -71,3 +71,43 @@ jobs:
             ghcr.io/${{ env.IMAGE_NAME }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # Without this, every scanner release needs a hand-written PR against the
+  # deployment repo — which is exactly the step that gets forgotten while prod
+  # quietly keeps running an old image. Backend and frontend have had this from
+  # the start; the watchtower repo did not.
+  update-prod:
+    needs: build-prod
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    steps:
+      # Pinned to a commit, not the v2 tag: a tag on a third-party action can be
+      # moved, and this job holds a token with write access to the deployment repo.
+      - name: Set up kustomize
+        uses: imranismail/setup-kustomize@2ba527d4d055ab63514ba50a99456fc35684947f # v2
+
+      # checkout rather than `git clone https://x-access-token:$TOKEN@…`: passing the
+      # token as an input keeps it out of the command line, where it would be visible
+      # in the process list and could be echoed by a failing git.
+      - name: Check out deployment repo
+        uses: actions/checkout@v4
+        with:
+          repository: magenta-mause/cosy-domain-provider-deployment
+          token: ${{ secrets.DEPLOY_REPO_TOKEN }}
+          path: deploy-repo
+
+      - name: Update watchtower image tag
+        run: |
+          # Unlike backend and frontend, the `v` is kept: the images published
+          # above are tagged with the git ref verbatim, so stripping it here
+          # would point the overlay at a tag that does not exist.
+          cd deploy-repo/overlays/prod
+          kustomize edit set image ghcr.io/${{ env.IMAGE_NAME }}:${GITHUB_REF_NAME}
+
+      - name: Commit and push
+        run: |
+          cd deploy-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git diff --quiet && git diff --staged --quiet || git commit -am "ci: update watchtower image to ${GITHUB_REF_NAME}"
+          git push
