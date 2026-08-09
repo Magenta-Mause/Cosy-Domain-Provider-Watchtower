@@ -8,7 +8,12 @@ export interface AdminSubdomain {
   status: "PENDING" | "ACTIVE" | "FAILED";
 }
 
-export interface ScanIngest extends Verdict {
+export interface ScanIngest extends Omit<Verdict, "category"> {
+  /**
+   * Wider than the model's own enum: UNREACHABLE is set by the runner from the HTTP
+   * exchange, never chosen by the agent.
+   */
+  category: Verdict["category"] | "UNREACHABLE";
   subdomainUuid: string;
   scannedAt: string;
   reachable: boolean;

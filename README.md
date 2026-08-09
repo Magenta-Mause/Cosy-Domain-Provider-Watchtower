@@ -33,10 +33,16 @@ site answered at all, and on the HTTP status that gets stored.
 | Category | Meaning |
 | --- | --- |
 | `COSY_FRONTEND` | A COSY instance. The original use case, never a problem. |
-| `BENIGN` | Another honest use: blog, portfolio, docs, gallery. |
+| `BENIGN` | Another honest use with real content: blog, portfolio, docs, gallery. |
+| `EMPTY` | Answered, but hosts nothing: 404 everywhere, parking page, server default. |
 | `SUSPICIOUS` | Warrants a human look, not conclusive. |
 | `MALICIOUS` | Clear abuse: scam, phishing, fake shop, malware. |
-| `UNREACHABLE` | Nothing answered. Set by the runner, not the model. |
+| `UNREACHABLE` | Nothing answered. Set by the runner, **not offered to the model**. |
+
+`UNREACHABLE` is deliberately absent from the model's schema. Whether a host responded is
+a fact about the HTTP exchange, not a judgement about content; offering it produced rows
+saying `reachable: true, category: UNREACHABLE`, and an all-404 host came back `BENIGN`
+one run and `UNREACHABLE` the next. `EMPTY` is the content-side category for that case.
 
 Only `SUSPICIOUS` and `MALICIOUS` land in the dashboard's review queue.
 

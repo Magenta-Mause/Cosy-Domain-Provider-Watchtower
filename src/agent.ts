@@ -20,12 +20,18 @@ How to classify:
 - COSY_FRONTEND — the site is a COSY instance. Recognisable by the pixel-art styling, the COSY
   logo/wordmark, a game-server list or a COSY login screen. This is the expected default and is
   never a reputation problem.
-- BENIGN — some other honest use: a blog, portfolio, documentation, gallery, small project.
+- BENIGN — some other honest use with actual content: a blog, portfolio, documentation,
+  gallery, small project.
+- EMPTY — the host answers but there is nothing on it: 404 on every path, a parking page, an
+  untouched web-server default page. Say so plainly; a subdomain nobody has pointed anywhere
+  yet is normal and harmless. Do not stretch this to cover a thin but real site — that is BENIGN.
 - SUSPICIOUS — something warrants a human look but is not conclusive: missing imprint on a
   commercial-looking page, aggressive monetisation, a login form imitating an unrelated brand.
 - MALICIOUS — clear abuse: crypto "double your money" schemes, credential phishing, fake shops
   taking prepayment, malware or pirated-content distribution.
-- UNREACHABLE — nothing answered. You will normally not need this; the runner handles it.
+There is deliberately no category for "did not answer at all". Whether the host responded is
+a fact about the HTTP exchange, and the runner records it — you only ever judge content you
+could actually see.
 
 Judge what a visitor sees, not what the markup claims. A site that merely looks unpolished is
 BENIGN, not SUSPICIOUS.
