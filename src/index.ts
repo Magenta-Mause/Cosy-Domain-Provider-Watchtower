@@ -124,10 +124,12 @@ async function main(): Promise<void> {
 
   log("scan finished", { succeeded, failed });
 
-  // A run where every single subdomain failed is an infrastructure problem (bad
-  // credentials, unreachable backend) and should show up as a failed CronJob rather
-  // than as a quiet no-op.
-  if (targets.length > 0 && succeeded === 0) {
+  // Any failure fails the run. This used to trip only when *every* subdomain failed,
+  // which meant a partial failure — one subdomain silently not scanned — surfaced as a
+  // green CronJob that nobody would ever look at. For a job that runs unattended at
+  // 03:12, "mostly worked" is the outcome most worth being told about; a genuinely
+  // unreachable site is not counted here, it is recorded as an UNREACHABLE verdict.
+  if (failed > 0) {
     process.exitCode = 1;
   }
 }
