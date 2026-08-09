@@ -81,12 +81,20 @@ jobs:
     if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
     steps:
+      # Pinned to a commit, not the v2 tag: a tag on a third-party action can be
+      # moved, and this job holds a token with write access to the deployment repo.
       - name: Set up kustomize
-        uses: imranismail/setup-kustomize@v2
+        uses: imranismail/setup-kustomize@2ba527d4d055ab63514ba50a99456fc35684947f # v2
 
-      - name: Clone deployment repo
-        run: |
-          git clone https://x-access-token:${{ secrets.DEPLOY_REPO_TOKEN }}@github.com/magenta-mause/cosy-domain-provider-deployment.git deploy-repo
+      # checkout rather than `git clone https://x-access-token:$TOKEN@…`: passing the
+      # token as an input keeps it out of the command line, where it would be visible
+      # in the process list and could be echoed by a failing git.
+      - name: Check out deployment repo
+        uses: actions/checkout@v4
+        with:
+          repository: magenta-mause/cosy-domain-provider-deployment
+          token: ${{ secrets.DEPLOY_REPO_TOKEN }}
+          path: deploy-repo
 
       - name: Update watchtower image tag
         run: |
